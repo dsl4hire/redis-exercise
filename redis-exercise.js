@@ -2,21 +2,27 @@ var redis = require('redis');
 async function main() {
     try {
         const clientA = redis.createClient();
-            //     '6379', '18.222.123.50',
-            //     {return_buffers: true}
-            // ).on('error', err => {console.error('ERR:REDIS:' + err);throw err});
-        // console.log(clientA.connectionOption);
-        // console.log(clientA.options);
-        // const key = 'values';
+        const key = 'values';
+        // delete old values
+        clientA.del( key );
+
+        // add 1-100 as values
         var i;
         for (i = 1; i <=100; i++) { 
-            result = await clientA.lpush(key, i);
-            console.log('lpush result ' +  i + ' = ' + result);
+            result = clientA.lpush(key, i);
+            console.log('added ' +  i + ' to values list');
         }
+
+        // retrieve new values in reverse order vs was entered
+        // was supposed to retrieve from replica, but had connectivity issues
         // const clientB =  redis.createClient("3.14.64.102");
-        // const values = await clientB.lrange(key, 0, -1);
-        const values = await clientA.lrange(key, 0, -1);
-        values.forEach(v => console.log(v));
+        // const values = clientB.lrange(key, 0, -1
+        const values = clientA.lrange(key, 0, -1, function (err, replies) {
+            console.log(replies.length + " replies:");
+            replies.forEach(function (reply, i) {
+                console.log("    " + i + ": " + reply);
+            });
+            clientA.quit();});
     } catch (error) {
         console.error("Uncaught Exception: " + error);
     }
